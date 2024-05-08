@@ -5,12 +5,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class WordCounterImpl implements WordCounter{
 
     private final Translator translator;
 
-    private final Map<String, Integer> wordMap = new ConcurrentHashMap<>();
+    private final Map<String, AtomicInteger> wordMap = new ConcurrentHashMap<>();
 
     public WordCounterImpl(Translator translator) {
         this.translator = translator;
@@ -25,7 +26,7 @@ public class WordCounterImpl implements WordCounter{
                 .map(word -> getEnglishWords(word, language))
                 .map(String::toLowerCase)
                 .filter(this::isWord)
-                .forEach(word -> wordMap.put(word, wordMap.getOrDefault(word, 0) + 1));
+                .forEach(word -> wordMap.computeIfAbsent(word, k -> new AtomicInteger(0)).incrementAndGet());
 
         return wordMap.size();
     }
@@ -43,7 +44,7 @@ public class WordCounterImpl implements WordCounter{
             throw new WordNotFoundException("Cannot find word");
         }
 
-        return wordMap.get(word.toLowerCase());
+        return wordMap.get(word.toLowerCase()).get();
 
     }
 
